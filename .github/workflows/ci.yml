@@ -94,6 +94,7 @@ jobs:
     env:
       SEQUELIZE_GITHUB_REF: ${{ matrix.sequelize-github-ref }}
       DIALECT: postgres
+      SEQ_PORT: 26257
     steps:
       - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar zxv
       - run: sudo cp cockroach-v20.2.0.linux-amd64/cockroach /usr/local/bin/.
@@ -115,6 +116,7 @@ jobs:
         run: node sequelize_pg_tests/download-sequelize.js
       -
         run: ls -lah
+        # TODO: Why no package-lock.json?????????
       -
         run: ls -lah .downloaded-sequelize
       -

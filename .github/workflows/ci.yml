@@ -9,7 +9,7 @@ jobs:
       - run: docker version
       - run: docker pull cockroachdb/cockroach
       - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:latest start --insecure
-      - run: docker exec -it roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
       -
         uses: actions/checkout@v2
       -

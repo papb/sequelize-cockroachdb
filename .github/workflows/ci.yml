@@ -134,4 +134,4 @@ jobs:
       -
         run: cat .downloaded-sequelize/scripts/mocha_bootload
       -
-        run: cd .downloaded-sequelize && npm run test-integration
+        run: cd .downloaded-sequelize && npm ci && npm run test-integration

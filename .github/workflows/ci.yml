@@ -29,3 +29,53 @@ jobs:
         run: npm install --save sequelize@${{ matrix.sequelize-version }}
       -
         run: npm test
+  seq-pg-integration-tests:
+    strategy:
+      matrix:
+        sequelize-github-ref: [v5, v6]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    container: cockroachdb/cockroach:latest
+    name: Pg tests from Sequelize ${{ matrix.sequelize-github-ref }}
+    env:
+      SEQUELIZE_GITHUB_REF: ${{ matrix.sequelize-github-ref }}
+      DIALECT: postgres
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      -
+        run: cockroach version
+      -
+        run: cockroach start-single-node --background --insecure
+      -
+        run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+      -
+        run: npm install
+      -
+        run: node sequelize_pg_tests/download-sequelize.js
+      -
+        run: ls
+      -
+        run: ls .downloaded-sequelize
+      -
+        run: node sequelize_pg_tests/put-our-patches-in-downloaded-sequelize.js
+      -
+        run: ls
+      -
+        run: ls .downloaded-sequelize
+      -
+        run: mkdir -p .downloaded-sequelize/.cockroachdb-patches/node_modules
+      -
+        run: npm ls --prod=true --parseable=true | grep node_modules | xargs -I{} cp -r {} .downloaded-sequelize/.cockroachdb-patches/node_modules/.
+      -
+        run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
+      -
+        run: echo 'require("../.cockroachdb-patches")' > .downloaded-sequelize/scripts/mocha_bootload
+      -
+        run: cat .downloaded-sequelize/scripts/mocha_bootload
+      -
+        run: cd .downloaded-sequelize && npm run test-integration

@@ -114,15 +114,15 @@ jobs:
       -
         run: node sequelize_pg_tests/download-sequelize.js
       -
-        run: ls
+        run: ls -lah
       -
-        run: ls .downloaded-sequelize
+        run: ls -lah .downloaded-sequelize
       -
         run: node sequelize_pg_tests/put-our-patches-in-downloaded-sequelize.js
       -
-        run: ls
+        run: ls -lah
       -
-        run: ls .downloaded-sequelize
+        run: ls -lah .downloaded-sequelize
       -
         run: mkdir -p .downloaded-sequelize/.cockroachdb-patches/node_modules
       -
@@ -134,4 +134,4 @@ jobs:
       -
         run: cat .downloaded-sequelize/scripts/mocha_bootload
       -
-        run: cd .downloaded-sequelize && npm ci && npm run test-integration
+        run: cd .downloaded-sequelize && npm install && npm run test-integration

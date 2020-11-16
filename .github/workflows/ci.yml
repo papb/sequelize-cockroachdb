@@ -1,16 +1,14 @@
 name: CI
 on: [push, pull_request]
 
-# [trigger rerun]
-
 jobs:
-  v20.1.8:
+  v20_1_8:
     runs-on: ubuntu-latest
     steps:
       - run: docker pull cockroachdb/cockroach:v20.1.8
       - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.1.8 start --insecure
       - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
-  v20.2.0:
+  v20_2_0:
     runs-on: ubuntu-latest
     steps:
       - run: docker pull cockroachdb/cockroach:v20.2.0

@@ -8,18 +8,33 @@ jobs:
       - run: docker pull cockroachdb/cockroach:v20.1.8
       - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.1.8 start --insecure
       - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+      - run: sleep 5
+      - run: docker exec roach bash -c 'echo "\l" | cockroach sql --insecure'
   v20_2_0:
     runs-on: ubuntu-latest
     steps:
       - run: docker pull cockroachdb/cockroach:v20.2.0
       - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.2.0 start-single-node --insecure
       - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+      - run: sleep 5
+      - run: docker exec roach bash -c 'echo "\l" | cockroach sql --insecure'
   with-installation:
     runs-on: ubuntu-latest
     steps:
       - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar zxv
       - run: sudo cp cockroach-v20.2.0.linux-amd64/cockroach /usr/local/bin/.
+      - run: cockroach start-single-node --background --insecure
       - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+      - run: sleep 5
+      - run: echo "\l" | cockroach sql --insecure
+  should-not-work:
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker pull cockroachdb/cockroach:v20.2.0
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.2.0 start-single-node --background --insecure
+      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+      - run: sleep 5
+      - run: docker exec roach bash -c 'echo "\l" | cockroach sql --insecure'
   seq-pg-integration-tests:
     strategy:
       matrix:
@@ -30,6 +45,8 @@ jobs:
     env:
       SEQUELIZE_GITHUB_REF: ${{ matrix.sequelize-github-ref }}
       DIALECT: postgres
+      SEQ_USER: sequelize_test
+      SEQ_PW: sequelize_test
       SEQ_PORT: 26257
     steps:
       - run: docker pull cockroachdb/cockroach:v20.2.0

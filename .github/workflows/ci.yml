@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     container: cockroachdb/cockroach:latest
     steps:
-      - run: sudo add-apt-repository ppa:git-core/ppa -y
-      - run: sudo apt-get update
-      - run: sudo apt-get install git -y
+      - run: add-apt-repository ppa:git-core/ppa -y
+      - run: apt-get update
+      - run: apt-get install git -y
       - run: git --version
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
@@ -60,6 +60,7 @@ jobs:
           - 26257:26257
           - 8080:8080
     steps:
+      - run: sleep 10
       - run: wget localhost:8080
       - run: cockroach version
   with-service-overriding-entrypoint:
@@ -70,14 +71,16 @@ jobs:
         ports:
           - 26257:26257
           - 8080:8080
-        options: --entrypoint "/cockroach/cockroach.sh start-single-node --background --insecure"
+        options: --entrypoint /cockroach/cockroach.sh start-single-node --background --insecure
     steps:
+      - run: sleep 10
       - run: wget localhost:8080
       - run: cockroach version
   with-installation:
     runs-on: ubuntu-latest
     steps:
-      - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar -xJ
+      - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar  zxv
+      # - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar -xJ tar  zxv
       - run: ls -lah
       - run: ls -lah cockroach-v20.2.0.linux-amd64
       - run: ./cockroach-v20.2.0.linux-amd64/cockroach version

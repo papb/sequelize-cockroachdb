@@ -9,7 +9,7 @@ jobs:
       - run: docker version
       - run: docker pull cockroachdb/cockroach
       - run: docker ps
-      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:latest start-single-node --background --insecure
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:latest start --insecure
       - run: docker ps
       - run: sleep 10
       - run: docker ps

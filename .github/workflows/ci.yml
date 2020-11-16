@@ -84,4 +84,4 @@ jobs:
       -
         run: cat .downloaded-sequelize/scripts/mocha_bootload
       -
-        run: cd .downloaded-sequelize && npm install && npm run test-integration
+        run: cd .downloaded-sequelize && npm install && npx mocha --require scripts/mocha-bootload --globals setImmediate,clearImmediate --check-leaks --colors -t 30000 --reporter spec "test/integration/**/*.test.js"

@@ -2,39 +2,88 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  # foo:
-  #   runs-on: ubuntu-latest
-  #   name: Foobar
-  #   steps:
-  #     - run: docker version
-  #     - run: docker pull cockroachdb/cockroach
-  #     - run: docker ps
-  #     - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:latest start --insecure
-  #     - run: docker ps
-  #     - run: sleep 10
-  #     - run: docker ps
-  #     - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
-  #     -
-  #       uses: actions/checkout@v2
-  #     -
-  #       uses: actions/setup-node@v1
-  #       with:
-  #         node-version: 12.x
-  #     -
-  #       run: npm install
-  #     -
-  #       run: npm test
-  bar:
+  asinmaster:
+    runs-on: ubuntu-latest
+    container: cockroachdb/cockroach:latest
+    steps:
+      - run: git --version
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - run: cockroach version
+      - run: cockroach start-single-node --background --insecure
+      - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+  asinmaster-updating-git:
+    runs-on: ubuntu-latest
+    container: cockroachdb/cockroach:latest
+    steps:
+      - run: sudo add-apt-repository ppa:git-core/ppa -y
+      - run: sudo apt-get update
+      - run: sudo apt-get install git -y
+      - run: git --version
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - run: cockroach version
+      - run: cockroach start-single-node --background --insecure
+      - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+  with-docker-manually:
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker version
+      - run: docker pull cockroachdb/cockroach:latest
+      - run: docker ps
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:latest start --insecure
+      - run: docker ps
+      - run: sleep 10
+      - run: docker ps
+      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+  with-docker-manually-single-node:
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker version
+      - run: docker pull cockroachdb/cockroach:latest
+      - run: docker ps
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:latest start-single-node --background --insecure
+      - run: docker ps
+      - run: sleep 10
+      - run: docker ps
+      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+  with-service:
     runs-on: ubuntu-latest
     services:
       cockroach:
         image: cockroachdb/cockroach:latest
         ports:
           - 26257:26257
+          - 8080:8080
+    steps:
+      - run: wget localhost:8080
+      - run: cockroach version
+  with-service-overriding-entrypoint:
+    runs-on: ubuntu-latest
+    services:
+      cockroach:
+        image: cockroachdb/cockroach:latest
+        ports:
+          - 26257:26257
+          - 8080:8080
         options: --entrypoint "/cockroach/cockroach.sh start-single-node --background --insecure"
     steps:
-      -
-        run: cockroach version
+      - run: wget localhost:8080
+      - run: cockroach version
+  with-installation:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar -xJ
+      - run: ls -lah
+      - run: ls -lah cockroach-v20.2.0.linux-amd64
+      - run: ./cockroach-v20.2.0.linux-amd64/cockroach version
+      - run: sudo cp cockroach-v20.2.0.linux-amd64/cockroach /usr/local/bin/.
+      - run: cockroach version
+
   # test:
   #   strategy:
   #     matrix:

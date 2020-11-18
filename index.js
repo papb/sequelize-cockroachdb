@@ -42,6 +42,9 @@ if (semver.satisfies(sequelizeVersion, '5.x')) {
 const PostgresDialect = require('sequelize/lib/dialects/postgres');
 PostgresDialect.prototype.supports.EXCEPTION = false;
 
+// Hmmm....
+PostgresDialect.prototype.supports.transactions = false;
+
 //// [3] Tell Sequelize to accept large numbers as strings
 
 // The JavaScript number type cannot represent all 64-bit integers--it can only

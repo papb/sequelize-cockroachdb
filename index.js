@@ -14,6 +14,8 @@
 
 'use strict';
 
+throw new Error('You are reading this, right?');
+
 // Ensure the user did not forget to install Sequelize.
 try {
   require('sequelize');

@@ -102,7 +102,7 @@ jobs:
     steps:
       - run: docker pull cockroachdb/cockroach:${{ matrix.crdbv }}
       - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:${{ matrix.crdbv }} start-single-node --insecure
-      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+      - run: (docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure') || (echo 'fallback' && docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | ./cockroach sql --insecure')
       -
         uses: actions/checkout@v2
       -
@@ -146,7 +146,7 @@ jobs:
       -
         run: cat .downloaded-sequelize/scripts/mocha-bootload
       -
-        run: (cat test/integration/support.js) && (sed -i -e 's/throw new Error/console.log/g' test/integration/support.js) && (cat test/integration/support.js)
+        run: (cat .downloaded-sequelize/test/integration/support.js) && (sed -i -e 's/throw new Error/console.log/g' .downloaded-sequelize/test/integration/support.js) && (cat .downloaded-sequelize/test/integration/support.js)
         if: matrix.disable-extra-queries-check
       -
         run: cd .downloaded-sequelize && npm ci && npm install -D mocha@latest && SEQ_PW= npm run test-integration

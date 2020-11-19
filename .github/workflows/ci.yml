@@ -2,82 +2,82 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  asinmaster:
-    runs-on: ubuntu-latest
-    container: cockroachdb/cockroach:v20.1.8
-    steps:
-      - run: git --version
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12.x
-      - run: cockroach version
-      - run: cockroach start-single-node --background --insecure
-      - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
-  asinmaster-updating-git:
-    runs-on: ubuntu-latest
-    container: cockroachdb/cockroach:v20.1.8
-    steps:
-      - run: apt-get update
-      - run: apt-get install -y software-properties-common
-      - run: add-apt-repository ppa:git-core/ppa -y
-      - run: apt-get update
-      - run: apt-get install git -y
-      - run: git --version
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12.x
-      - run: cockroach version
-      - run: cockroach start-single-node --background --insecure
-      - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
-  with-docker-manually:
-    runs-on: ubuntu-latest
-    steps:
-      - run: docker version
-      - run: docker pull cockroachdb/cockroach:v20.1.8
-      - run: docker ps
-      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.1.8 start --insecure
-      - run: docker ps
-      - run: sleep 10
-      - run: docker ps
-      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
-  with-docker-manually-single-node:
-    runs-on: ubuntu-latest
-    steps:
-      - run: docker version
-      - run: docker pull cockroachdb/cockroach:v20.1.8
-      - run: docker ps
-      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.1.8 start-single-node --background --insecure
-      - run: docker ps
-      - run: sleep 10
-      - run: docker ps
-      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
-  with-service:
-    runs-on: ubuntu-latest
-    services:
-      cockroach:
-        image: cockroachdb/cockroach:v20.1.8
-        ports:
-          - 26257:26257
-          - 8080:8080
-    steps:
-      - run: sleep 10
-      - run: wget localhost:8080
-      - run: cockroach version
-  with-service-overriding-entrypoint:
-    runs-on: ubuntu-latest
-    services:
-      cockroach:
-        image: cockroachdb/cockroach:v20.1.8
-        ports:
-          - 26257:26257
-          - 8080:8080
-        options: --entrypoint /cockroach/cockroach.sh start-single-node --background --insecure
-    steps:
-      - run: sleep 10
-      - run: wget localhost:8080
-      - run: cockroach version
+  # asinmaster:
+  #   runs-on: ubuntu-latest
+  #   container: cockroachdb/cockroach:v20.1.8
+  #   steps:
+  #     - run: git --version
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 12.x
+  #     - run: cockroach version
+  #     - run: cockroach start-single-node --background --insecure
+  #     - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+  # asinmaster-updating-git:
+  #   runs-on: ubuntu-latest
+  #   container: cockroachdb/cockroach:v20.1.8
+  #   steps:
+  #     - run: apt-get update
+  #     - run: apt-get install -y software-properties-common
+  #     - run: add-apt-repository ppa:git-core/ppa -y
+  #     - run: apt-get update
+  #     - run: apt-get install git -y
+  #     - run: git --version
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 12.x
+  #     - run: cockroach version
+  #     - run: cockroach start-single-node --background --insecure
+  #     - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+  # with-docker-manually:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: docker version
+  #     - run: docker pull cockroachdb/cockroach:v20.1.8
+  #     - run: docker ps
+  #     - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.1.8 start --insecure
+  #     - run: docker ps
+  #     - run: sleep 10
+  #     - run: docker ps
+  #     - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+  # with-docker-manually-single-node:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: docker version
+  #     - run: docker pull cockroachdb/cockroach:v20.1.8
+  #     - run: docker ps
+  #     - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.1.8 start-single-node --background --insecure
+  #     - run: docker ps
+  #     - run: sleep 10
+  #     - run: docker ps
+  #     - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+  # with-service:
+  #   runs-on: ubuntu-latest
+  #   services:
+  #     cockroach:
+  #       image: cockroachdb/cockroach:v20.1.8
+  #       ports:
+  #         - 26257:26257
+  #         - 8080:8080
+  #   steps:
+  #     - run: sleep 10
+  #     - run: wget localhost:8080
+  #     - run: cockroach version
+  # with-service-overriding-entrypoint:
+  #   runs-on: ubuntu-latest
+  #   services:
+  #     cockroach:
+  #       image: cockroachdb/cockroach:v20.1.8
+  #       ports:
+  #         - 26257:26257
+  #         - 8080:8080
+  #       options: --entrypoint /cockroach/cockroach.sh start-single-node --background --insecure
+  #   steps:
+  #     - run: sleep 10
+  #     - run: wget localhost:8080
+  #     - run: cockroach version
   with-installation:
     runs-on: ubuntu-latest
     steps:
@@ -113,12 +113,21 @@ jobs:
       -
         run: npm install
       -
-        run: node sequelize_pg_tests/download-sequelize.js
+        run: wget https://github.com/sequelize/sequelize/archive/${SEQUELIZE_GITHUB_REF}.zip
       -
-        run: ls -lah
-        # TODO: Why no package-lock.json?????????
+        run: ls
+      -
+        run: unzip ${SEQUELIZE_GITHUB_REF}.zip -d temp-unzip-out
+      -
+        run: mv temp-unzip-out/* .downloaded-sequelize
       -
         run: ls -lah .downloaded-sequelize
+      # -
+      #   run: node sequelize_pg_tests/download-sequelize.js
+      # -
+      #   run: ls -lah
+      # -
+      #   run: ls -lah .downloaded-sequelize # TODO: Why no package-lock.json?????????
       -
         run: node sequelize_pg_tests/put-our-patches-in-downloaded-sequelize.js
       -
@@ -132,8 +141,8 @@ jobs:
       -
         run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
       -
-        run: echo 'require("../.cockroachdb-patches")' > .downloaded-sequelize/scripts/mocha_bootload
+        run: mv sequelize_pg_tests/mocha_bootload .downloaded-sequelize/scripts/mocha_bootload
       -
         run: cat .downloaded-sequelize/scripts/mocha_bootload
       -
-        run: cd .downloaded-sequelize && npm install && npm run test-integration
+        run: cd .downloaded-sequelize && npm ci && npm install -D mocha@latest && npm run test-integration

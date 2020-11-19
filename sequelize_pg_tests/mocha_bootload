@@ -1,0 +1,9 @@
+exports.mochaGlobalSetup = async function() {
+  const PostgresDialect = require('../lib/dialects/postgres');
+  console.log('global setup info 1:', PostgresDialect.prototype.supports.transactions);
+  require('../.cockroachdb-patches');
+  console.log('global setup info 2:', PostgresDialect.prototype.supports.transactions);
+  PostgresDialect.prototype.supports.transactions = false;
+  console.log('global setup info 3:', PostgresDialect.prototype.supports.transactions);
+  console.log('global setup done...');
+};

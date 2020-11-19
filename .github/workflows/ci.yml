@@ -78,12 +78,12 @@ jobs:
   #     - run: sleep 10
   #     - run: wget localhost:8080
   #     - run: cockroach version
-  with-installation:
-    runs-on: ubuntu-latest
-    steps:
-      - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar zxv
-      - run: sudo cp cockroach-v20.2.0.linux-amd64/cockroach /usr/local/bin/.
-      - run: cockroach version
+  # with-installation:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar zxv
+  #     - run: sudo cp cockroach-v20.2.0.linux-amd64/cockroach /usr/local/bin/.
+  #     - run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
   seq-pg-integration-tests:
     strategy:
       matrix:
@@ -93,17 +93,14 @@ jobs:
     name: Pg tests from Sequelize ${{ matrix.sequelize-github-ref }}
     env:
       SEQUELIZE_GITHUB_REF: ${{ matrix.sequelize-github-ref }}
+      SEQ_USER: root
+      # SEQ_PW: ''
       DIALECT: postgres
       SEQ_PORT: 26257
     steps:
-      - run: curl https://binaries.cockroachdb.com/cockroach-v20.2.0.linux-amd64.tgz | tar zxv
-      - run: sudo cp cockroach-v20.2.0.linux-amd64/cockroach /usr/local/bin/.
-      -
-        run: cockroach version
-      -
-        run: cockroach start-single-node --background --insecure
-      -
-        run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
+      - run: docker pull cockroachdb/cockroach:v20.2.0
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.2.0 start-single-node --insecure
+      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
       -
         uses: actions/checkout@v2
       -
@@ -120,6 +117,8 @@ jobs:
         run: unzip ${SEQUELIZE_GITHUB_REF}.zip -d temp-unzip-out
       -
         run: mv temp-unzip-out/* .downloaded-sequelize
+      -
+        run: rmdir temp-unzip-out
       -
         run: ls -lah .downloaded-sequelize
       # -
@@ -145,4 +144,4 @@ jobs:
       -
         run: cat .downloaded-sequelize/scripts/mocha_bootload
       -
-        run: cd .downloaded-sequelize && npm ci && npm install -D mocha@latest && npm run test-integration
+        run: cd .downloaded-sequelize && npm ci && npm install -D mocha@latest && SEQ_PW= npm run test-integration

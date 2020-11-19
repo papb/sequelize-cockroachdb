@@ -146,7 +146,7 @@ jobs:
       -
         run: cat .downloaded-sequelize/scripts/mocha-bootload
       -
-        if: disable-extra-queries-check
         run: (cat test/integration/support.js) && (sed -i -e 's/throw new Error/console.log/g' test/integration/support.js) && (cat test/integration/support.js)
+        if: matrix.disable-extra-queries-check
       -
         run: cd .downloaded-sequelize && npm ci && npm install -D mocha@latest && SEQ_PW= npm run test-integration

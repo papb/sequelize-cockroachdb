@@ -87,10 +87,12 @@ jobs:
   seq-pg-integration-tests:
     strategy:
       matrix:
-        sequelize-github-ref: [v5, v6]
+        crdbv: [v20.2.0, v20.1.8, v19.2.11]
+        sequelize-github-ref: [v6]
+        disable-extra-queries-check: [false, true]
       fail-fast: false
     runs-on: ubuntu-latest
-    name: Pg tests from Sequelize ${{ matrix.sequelize-github-ref }}
+    name: Pg tests from CRDB ${{ matrix.crdbv }} and Sequelize ${{ matrix.sequelize-github-ref }}
     env:
       SEQUELIZE_GITHUB_REF: ${{ matrix.sequelize-github-ref }}
       SEQ_USER: root
@@ -98,8 +100,8 @@ jobs:
       DIALECT: postgres
       SEQ_PORT: 26257
     steps:
-      - run: docker pull cockroachdb/cockroach:v20.2.0
-      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.2.0 start-single-node --insecure
+      - run: docker pull cockroachdb/cockroach:${{ matrix.crdbv }}
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:${{ matrix.crdbv }} start-single-node --insecure
       - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
       -
         uses: actions/checkout@v2
@@ -140,8 +142,11 @@ jobs:
       -
         run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
       -
-        run: mv sequelize_pg_tests/mocha_bootload .downloaded-sequelize/scripts/mocha_bootload
+        run: mv sequelize_pg_tests/mocha_bootload .downloaded-sequelize/scripts/mocha-bootload
       -
-        run: cat .downloaded-sequelize/scripts/mocha_bootload
+        run: cat .downloaded-sequelize/scripts/mocha-bootload
+      -
+        if: disable-extra-queries-check
+        run: (cat test/integration/support.js) && (sed -i -e 's/throw new Error/console.log/g' test/integration/support.js) && (cat test/integration/support.js)
       -
         run: cd .downloaded-sequelize && npm ci && npm install -D mocha@latest && SEQ_PW= npm run test-integration

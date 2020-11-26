@@ -35,7 +35,9 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-datetime": "^1.7.0",
+    "fs-jetpack": "^4.1.0",
     "mocha": "^8.2.0",
+    "outdent": "^0.7.1",
     "sequelize": "^6.3.5"
   },
   "peerDependencies": {

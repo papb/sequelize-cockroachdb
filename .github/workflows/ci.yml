@@ -1,31 +1,45 @@
 name: CI
-on: [push, pull_request]
+on: [push]
+
+env:
+  DIALECT: postgres
+  SEQ_PORT: 26257
+  SEQ_USER: root
+  SEQ_PW: ''
+  SEQ_DB: sequelize_test
 
 jobs:
-  test:
+  seq-pg-integration-tests:
     strategy:
       matrix:
-        sequelize-version: [5, 6]
+        crdb-version: [v20.2.1]
+        test-path: [associations/alias, associations/belongs-to-many, associations/belongs-to, associations/has-many, associations/has-one, associations/multiple-level-filters, associations/scope, associations/self, cls, configuration, data-types, dialects/abstract/connection-manager, dialects/postgres/associations, dialects/postgres/connection-manager, dialects/postgres/dao, dialects/postgres/data-types, dialects/postgres/error, dialects/postgres/hstore, dialects/postgres/query-interface, dialects/postgres/query, dialects/postgres/range, dialects/postgres/regressions, error, hooks/associations, hooks/bulkOperation, hooks/count, hooks/create, hooks/destroy, hooks/find, hooks/hooks, hooks/restore, hooks/updateAttributes, hooks/upsert, hooks/validate, include/findAll, include/findAndCountAll, include/findOne, include/limit, include/paranoid, include/schema, include/separate, include, instance/decrement, instance/destroy, instance/increment, instance/reload, instance/save, instance/to-json, instance/update, instance/values, instance, instance.validations, json, model/attributes/field, model/attributes/types, model/attributes, model/bulk-create/include, model/bulk-create, model/count, model/create/include, model/create, model/findAll/group, model/findAll/groupedLimit, model/findAll/order, model/findAll/separate, model/findAll, model/findOne, model/findOrBuild, model/geography, model/geometry, model/increment, model/json, model/optimistic_locking, model/paranoid, model/schema, model/scope/aggregate, model/scope/associations, model/scope/count, model/scope/destroy, model/scope/find, model/scope/findAndCountAll, model/scope/merge, model/scope/update, model/scope, model/searchPath, model/sum, model/sync, model/update, model/upsert, model, operators, pool, query-interface/changeColumn, query-interface/createTable, query-interface/describeTable, query-interface/dropEnum, query-interface/removeColumn, query-interface, replication, schema, sequelize/deferrable, sequelize/log, sequelize/query, sequelize, sequelize.transaction, timezone, transaction, trigger, utils, vectors]
       fail-fast: false
     runs-on: ubuntu-latest
-    container: cockroachdb/cockroach:latest
-    name: Sequelize v${{ matrix.sequelize-version }}
+    name: Test ${{ matrix.test-path }} with CRDB
     steps:
-      -
-        uses: actions/checkout@v2
-      -
-        uses: actions/setup-node@v1
+      - run: docker pull cockroachdb/cockroach:v20.2.1
+      - run: docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.2.1 start-single-node --insecure
+      - run: docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
           node-version: 12.x
-      -
-        run: cockroach version
-      -
-        run: cockroach start-single-node --background --insecure
-      -
-        run: echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure
-      -
-        run: npm install
-      -
-        run: npm install --save sequelize@${{ matrix.sequelize-version }}
-      -
-        run: npm test
+
+      - run: wget https://github.com/sequelize/sequelize/archive/v6.zip
+      - run: unzip v6.zip -d temp-unzip-out
+      - run: mv temp-unzip-out/* .downloaded-sequelize
+      - run: rmdir temp-unzip-out
+      - run: ls -lah .downloaded-sequelize
+
+      - run: npm install
+      - run: node sequelize_pg_tests/put-our-patches-in-downloaded-sequelize.js
+      - run: ls -lah
+      - run: ls -lah .downloaded-sequelize
+
+      - run: mkdir -p .downloaded-sequelize/.cockroachdb-patches/node_modules
+      - run: npm ls --prod=true --parseable=true | grep node_modules | xargs -I{} cp -r {} .downloaded-sequelize/.cockroachdb-patches/node_modules/.
+      - run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
+
+      - name: Run integration tests at '${{ matrix.test-path }}'
+        run: cd .downloaded-sequelize && npm ci && npx mocha --timeout 10000 --reporter spec --exit "test/integration/${{ matrix.test-path }}.test.js"

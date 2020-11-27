@@ -1,5 +1,5 @@
 const pTimeout = require('p-timeout');
-const { mustPatchTimeout, wantedTimeout } = require('./parse-timeout-env-variable');
+const { mustPatchTimeout, wantedHookTimeout } = require('./parse-timeout-env-variable');
 const {
 	replaceLastElementInArray,
 	prependToErrorMessage,
@@ -22,16 +22,16 @@ for (const fnName of ['beforeEach', 'afterEach']) {
 		if (!mustPatchTimeout) return wrapCatching(fn, onError);
 
 		const fnWithTimeoutPatched = function(...args) {
-			this.test.timeout(1000 * 60 * 60 * 24 * 365); // Tell mocha to not use their timeout.
+			this.timeout(0); // Tell mocha to not use their timeout.
 
-			let timeoutErrorMessage = `[Mocha Patched Timeout Error] \`${fnName}\` did not complete within ${wantedTimeout}ms.`;
+			let timeoutErrorMessage = `[Mocha Patched Timeout Error] \`${fnName}\` did not complete within ${wantedHookTimeout}ms.`;
 			if (this.test.file) timeoutErrorMessage += ' (' + this.test.file + ')';
 
 			// Ensure it returns a Promise
 			// If `fn` throws synchronously, we're fine
 			const hookPromise = Promise.resolve(fn.apply(this, args));
 
-			return pTimeout(hookPromise, wantedTimeout, timeoutErrorMessage);
+			return pTimeout(hookPromise, wantedHookTimeout, timeoutErrorMessage);
 		};
 
 		return wrapCatching(fnWithTimeoutPatched, onError);

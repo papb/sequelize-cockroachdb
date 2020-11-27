@@ -7,6 +7,7 @@ env:
   SEQ_USER: root
   SEQ_PW: ''
   SEQ_DB: sequelize_test
+  PATCH_MOCHA_TIMEOUT: 10000
 
 jobs:
   seq-pg-integration-tests:
@@ -41,5 +42,8 @@ jobs:
       - run: npm ls --prod=true --parseable=true | grep node_modules | xargs -I{} cp -r {} .downloaded-sequelize/.cockroachdb-patches/node_modules/.
       - run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
 
+      - run: mv sequelize_pg_tests/patch-mocha-each-hooks .downloaded-sequelize/.mocha-patches
+      - run: ls -lah .downloaded-sequelize/.mocha-patches
+
       - name: Run integration tests at '${{ matrix.test-path }}'
-        run: cd .downloaded-sequelize && npm ci && npx mocha --timeout 10000 --reporter spec --exit "test/integration/${{ matrix.test-path }}.test.js"
+        run: cd .downloaded-sequelize && npm ci && npm i -D pirates p-timeout && npx mocha --require .mocha-patches/register.js --timeout 10000 --reporter spec --exit "test/integration/${{ matrix.test-path }}.test.js"

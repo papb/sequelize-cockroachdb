@@ -31,7 +31,7 @@ for (const fnName of ['beforeEach', 'afterEach']) {
 			// If `fn` throws synchronously, we're fine
 			const hookPromise = Promise.resolve(fn.apply(this, args));
 
-			return pTimeout(hookPromise, wantedHookTimeout, timeoutErrorMessage);
+			return pTimeout(hookPromise, wantedHookTimeout, timeoutErrorMessage, true);
 		};
 
 		return wrapCatching(fnWithTimeoutPatched, onError);

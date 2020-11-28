@@ -11,9 +11,9 @@ function wrapFile(sourcePath, destinationPath) {
       const originalRequire = require;
       require = modulePath => originalRequire(modulePath.replace(/^sequelize\\b/, '..'));
       (() => {
-
+      // ------------------------------------------------------------------------------------
       ${contents}
-
+      // ------------------------------------------------------------------------------------
       })();
     `
   );

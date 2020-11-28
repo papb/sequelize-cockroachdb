@@ -37,13 +37,18 @@ jobs:
       - run: node sequelize_pg_tests/put-our-patches-in-downloaded-sequelize.js
       - run: ls -lah
       - run: ls -lah .downloaded-sequelize
+      - run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
 
       - run: mkdir -p .downloaded-sequelize/.cockroachdb-patches/node_modules
       - run: npm ls --prod=true --parseable=true | grep node_modules | xargs -I{} cp -r {} .downloaded-sequelize/.cockroachdb-patches/node_modules/.
-      - run: cat .downloaded-sequelize/.cockroachdb-patches/index.js
 
       - run: mv sequelize_pg_tests/patch-mocha-each-hooks .downloaded-sequelize/.mocha-patches
       - run: ls -lah .downloaded-sequelize/.mocha-patches
 
+      - run: cat .downloaded-sequelize/test/integration/support.js
+      - run: mv sequelize_pg_tests/patch-test-integration-support/support.js .downloaded-sequelize/test/integration/support.js
+      - run: cat .downloaded-sequelize/test/integration/support.js
+
       - name: Run integration tests at '${{ matrix.test-path }}'
-        run: cd .downloaded-sequelize && npm ci && npm i -D pirates p-timeout && npx mocha --require .mocha-patches/register.js --timeout 10000 --reporter spec --exit "test/integration/${{ matrix.test-path }}.test.js"
+      # run: cd .downloaded-sequelize && npm ci && npm i -D pirates p-timeout && npx mocha --require .mocha-patches/register.js --timeout 10000 --reporter spec --exit "test/integration/${{ matrix.test-path }}.test.js"
+        run: cd .downloaded-sequelize && npm ci && npm i -D         p-finally && npx mocha                                      --timeout 10000 --reporter spec --exit "test/integration/${{ matrix.test-path }}.test.js"

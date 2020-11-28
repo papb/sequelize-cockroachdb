@@ -57,6 +57,8 @@ const pTimeout = (promise, milliseconds, fallback) => new Promise((resolve, reje
 
 // --------------------------------------------------------------
 
+const CLEANUP_TIMEOUT = Number.parseInt(process.env.CLEANUP_TIMEOUT, 10) || 10000;
+
 const Support = require('../support');
 
 let runningQueries = new Set();
@@ -91,8 +93,8 @@ afterEach(async function() {
   try {
     await pTimeout(
       Support.clearDatabase(this.sequelize),
-      3000,
-      'Could not clear database after this test in less than 3000ms. This test broke the DB, and no tests can continue. Aborting.'
+      CLEANUP_TIMEOUT,
+      `Could not clear database after this test in less than ${CLEANUP_TIMEOUT}ms. This test broke the DB, and no tests can continue. Aborting.`
     );
   } catch (error) {
     let message = error.message;

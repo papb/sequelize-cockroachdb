@@ -20,10 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Start a single CockroachDB instance (${{ matrix.cockroachdb-version }}) with docker
+        env:
+          CONTAINER_ENTRYPOINT: ${{ startsWith(matrix.cockroachdb-version, 'v19') && './cockroach' || 'cockroach' }}
         run: |
+          echo $CONTAINER_ENTRYPOINT
           docker pull cockroachdb/cockroach:${{ matrix.cockroachdb-version }}
           docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:${{ matrix.cockroachdb-version }} start-single-node --insecure
-          docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | ${{ startsWith(matrix.cockroachdb-version, 'v19') ? './cockroach' : 'cockroach' }} sql --insecure'
+          docker exec roach bash -c "echo 'CREATE DATABASE sequelize_test;' | $CONTAINER_ENTRYPOINT sql --insecure"
 
       - name: Checkout the repository
         uses: actions/checkout@v2

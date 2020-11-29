@@ -11,7 +11,7 @@ env:
 jobs:
   test:
     # This one will spawn 6 jobs
-    name: Custom tests, CRDB ${{ matrix.cockroachdb-version }}, Sequelize v${{ matrix.sequelize-version }}
+    name: Main - CRDB ${{ matrix.cockroachdb-version }}, Sequelize v${{ matrix.sequelize-version }}
     strategy:
       matrix:
         sequelize-version: [5, 6]
@@ -23,7 +23,7 @@ jobs:
         run: |
           docker pull cockroachdb/cockroach:${{ matrix.cockroachdb-version }}
           docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:${{ matrix.cockroachdb-version }} start-single-node --insecure
-          docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
+          docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | ${{ startsWith(matrix.cockroachdb-version, 'v19') ? './cockroach' : 'cockroach' }} sql --insecure'
 
       - name: Checkout the repository
         uses: actions/checkout@v2
@@ -44,25 +44,23 @@ jobs:
 
   sequelize-postgres-integration-tests:
     # This one will spawn 219 jobs
-    name: Sequelize ${{ matrix.sequelize-tag }}, test '${{ matrix.test-path }}', CRDB ${{ matrix.cockroachdb-version }}
+    name: (${{ matrix.sequelize-tag }}) ${{ matrix.test-path }}
     strategy:
       matrix:
         sequelize-tag: [v5.22.3, v6.3.5]
-        cockroachdb-version: [v20.2.1] # We can't add more versions because we would exceed the limit of 256 jobs per workflow
         test-path: [associations/alias, associations/belongs-to-many, associations/belongs-to, associations/has-many, associations/has-one, associations/multiple-level-filters, associations/scope, associations/self, cls, configuration, data-types, dialects/abstract/connection-manager, dialects/postgres/associations, dialects/postgres/connection-manager, dialects/postgres/dao, dialects/postgres/data-types, dialects/postgres/error, dialects/postgres/hstore, dialects/postgres/query-interface, dialects/postgres/query, dialects/postgres/range, dialects/postgres/regressions, error, hooks/associations, hooks/bulkOperation, hooks/count, hooks/create, hooks/destroy, hooks/find, hooks/hooks, hooks/restore, hooks/updateAttributes, hooks/upsert, hooks/validate, include/findAll, include/findAndCountAll, include/findOne, include/limit, include/paranoid, include/schema, include/separate, include, instance/decrement, instance/destroy, instance/increment, instance/reload, instance/save, instance/to-json, instance/update, instance/values, instance, instance.validations, json, model/attributes/field, model/attributes/types, model/attributes, model/bulk-create/include, model/bulk-create, model/count, model/create/include, model/create, model/findAll/group, model/findAll/groupedLimit, model/findAll/order, model/findAll/separate, model/findAll, model/findOne, model/findOrBuild, model/geography, model/geometry, model/increment, model/json, model/optimistic_locking, model/paranoid, model/schema, model/scope/aggregate, model/scope/associations, model/scope/count, model/scope/destroy, model/scope/find, model/scope/findAndCountAll, model/scope/merge, model/scope/update, model/scope, model/searchPath, model/sum, model/sync, model/update, model/upsert, model, operators, pool, query-interface/changeColumn, query-interface/createTable, query-interface/describeTable, query-interface/dropEnum, query-interface/removeColumn, query-interface, replication, schema, sequelize/deferrable, sequelize/log, sequelize, sequelize.transaction, timezone, transaction, trigger, utils, vectors]
         include:
           -
             # Luckily the test files are the same in v5 and v6, except for one extra file in v6:
             sequelize-tag: v6.3.5
-            cockroachdb-version: v20.2.1
             test-path: sequelize/query
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      - name: Start a single CockroachDB instance (${{ matrix.cockroachdb-version }}) with docker
+      - name: Start a single CockroachDB instance (v20.2.2) with docker
         run: |
-          docker pull cockroachdb/cockroach:${{ matrix.cockroachdb-version }}
-          docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:${{ matrix.cockroachdb-version }} start-single-node --insecure
+          docker pull cockroachdb/cockroach:v20.2.2
+          docker run -d --name roach --hostname roach -p 26257:26257 -p 8080:8080 cockroachdb/cockroach:v20.2.2 start-single-node --insecure
           docker exec roach bash -c 'echo "CREATE DATABASE sequelize_test;" | cockroach sql --insecure'
 
       - name: Checkout `sequelize-cockroachdb` repository
@@ -82,6 +80,10 @@ jobs:
           unzip ${{ matrix.sequelize-tag }}.zip -d temp-unzip-out
           mv temp-unzip-out/* .downloaded-sequelize && rmdir temp-unzip-out
 
+      - name: Install Sequelize dependencies
+        working-directory: ./.downloaded-sequelize
+        run: npm install
+
       - name: Apply the `sequelize-cockroachdb` patches
         run: |
           node sequelize_pg_tests/put-our-patches-in-downloaded-sequelize.js
@@ -99,20 +101,16 @@ jobs:
           mv sequelize_pg_tests/patch-test-integration-support/support.js .downloaded-sequelize/test/integration/support.js
           cat .downloaded-sequelize/test/integration/support.js
 
-      # TODO: replace the fork tarball below with `npm install p-timeout` directly, as soon
-      # as https://github.com/sindresorhus/p-timeout/pull/17 gets merged
-      - name: Install Sequelize dependencies
+      - name: Install extra dependency for the improvement to `integration/support.js` (above)
         working-directory: ./.downloaded-sequelize
-        # We also install `p-timeout` because it is needed for the improvement to `integration/support.js`
+        # TODO: replace the fork tarball below with `npm install p-timeout` directly, as soon
+        # as https://github.com/sindresorhus/p-timeout/pull/17 gets merged
         run: |
-          npm ci
           npm install https://github.com/papb/p-timeout/tarball/4556add490c9e0322d2b641cf667fc90b0d63464
+          node -p 'require.resolve("p-timeout")'
+          node -p 'require("p-timeout").toString()'
 
-      # Observe the fork installation working
-      - run: node -p 'require.resolve("p-timeout")'
-      - run: node -p 'require("p-timeout").toString()'
-
-      - name: Run integration tests at '${{ matrix.test-path }}' for Sequelize ${{ matrix.sequelize-tag }} with CockroachDB ${{ matrix.cockroachdb-version }}
+      - name: Run integration tests at '${{ matrix.test-path }}' for Sequelize ${{ matrix.sequelize-tag }}
         working-directory: ./.downloaded-sequelize
         env:
           CLEANUP_TIMEOUT: 30000

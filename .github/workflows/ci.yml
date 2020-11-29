@@ -99,13 +99,18 @@ jobs:
           mv sequelize_pg_tests/patch-test-integration-support/support.js .downloaded-sequelize/test/integration/support.js
           cat .downloaded-sequelize/test/integration/support.js
 
-      # TODO: replace `p-finally` with `p-timeout` below after https://github.com/sindresorhus/p-timeout/pull/17 is merged
+      # TODO: replace the fork tarball below with `npm install p-timeout` directly, as soon
+      # as https://github.com/sindresorhus/p-timeout/pull/17 gets merged
       - name: Install Sequelize dependencies
         working-directory: ./.downloaded-sequelize
-        # We also install `p-finally` because it is needed for the improvement to `integration/support.js`
+        # We also install `p-timeout` because it is needed for the improvement to `integration/support.js`
         run: |
           npm ci
-          npm install p-finally
+          npm install https://github.com/papb/p-timeout/tarball/4556add490c9e0322d2b641cf667fc90b0d63464
+
+      # Observe the fork installation working
+      - run: node -p 'require.resolve("p-timeout")'
+      - run: node -p 'require("p-timeout").toString()'
 
       - name: Run integration tests at '${{ matrix.test-path }}' for Sequelize ${{ matrix.sequelize-tag }} with CockroachDB ${{ matrix.cockroachdb-version }}
         working-directory: ./.downloaded-sequelize

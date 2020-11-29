@@ -1,76 +1,13 @@
 'use strict';
 
-// --------------------------------------------------------------
-// TODO, replace this patch of `p-timeout` with simply `const pTimeout = require('p-timeout')`
-// once https://github.com/sindresorhus/p-timeout/pull/17 is merged
-// --------------------------------------------------------------
-const pTimeout = (() => {
-  const pFinally = require('p-finally');
-
-  class TimeoutError extends Error {
-    constructor(message) {
-      super(message);
-      this.name = 'TimeoutError';
-    }
-  }
-
-  const pTimeout = (promise, milliseconds, fallback, options) => new Promise((resolve, reject) => {
-    if (typeof milliseconds !== 'number' || milliseconds < 0) {
-      throw new TypeError('Expected `milliseconds` to be a positive number');
-    }
-
-    if (milliseconds === Infinity) {
-      resolve(promise);
-      return;
-    }
-
-    options = {
-      customTimers: {setTimeout: global.setTimeout, clearTimeout: global.clearTimeout},
-      ...options
-    };
-
-    const timer = options.customTimers.setTimeout(() => {
-      if (typeof fallback === 'function') {
-        try {
-          resolve(fallback());
-        } catch (error) {
-          reject(error);
-        }
-
-        return;
-      }
-
-      const message = typeof fallback === 'string' ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
-      const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
-
-      if (typeof promise.cancel === 'function') {
-        promise.cancel();
-      }
-
-      reject(timeoutError);
-    }, milliseconds);
-
-    // TODO: Use native `finally` keyword when targeting Node.js 10
-    pFinally(
-      // eslint-disable-next-line promise/prefer-await-to-then
-      promise.then(resolve, reject),
-      () => {
-        options.customTimers.clearTimeout(timer);
-      }
-    );
-  });
-
-  return pTimeout;
-})();
-// --------------------------------------------------------------
-
 // Store local references to `setTimeout` and `clearTimeout` asap, so that we can use them within `p-timeout`,
 // avoiding to be affected unintentionally by `sinon.useFakeTimers()` called by the tests themselves.
 const { setTimeout, clearTimeout } = global;
 
-const CLEANUP_TIMEOUT = Number.parseInt(process.env.CLEANUP_TIMEOUT, 10) || 30000;
-
+const pTimeout = require('p-timeout');
 const Support = require('../support');
+
+const CLEANUP_TIMEOUT = Number.parseInt(process.env.CLEANUP_TIMEOUT, 10) || 30000;
 
 let runningQueries = new Set();
 

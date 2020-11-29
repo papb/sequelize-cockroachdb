@@ -1,63 +1,74 @@
 'use strict';
 
 // --------------------------------------------------------------
-// https://github.com/sindresorhus/p-timeout/issues/16
+// TODO, replace this patch of `p-timeout` with simply `const pTimeout = require('p-timeout')`
+// once https://github.com/sindresorhus/p-timeout/pull/17 is merged
+// --------------------------------------------------------------
+const pTimeout = (() => {
+  const pFinally = require('p-finally');
 
-const { setTimeout, clearTimeout } = global;
+  class TimeoutError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = 'TimeoutError';
+    }
+  }
 
-const pFinally = require('p-finally');
+  const pTimeout = (promise, milliseconds, fallback, options) => new Promise((resolve, reject) => {
+    if (typeof milliseconds !== 'number' || milliseconds < 0) {
+      throw new TypeError('Expected `milliseconds` to be a positive number');
+    }
 
-class TimeoutError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = 'TimeoutError';
-	}
-}
+    if (milliseconds === Infinity) {
+      resolve(promise);
+      return;
+    }
 
-const pTimeout = (promise, milliseconds, fallback) => new Promise((resolve, reject) => {
-	if (typeof milliseconds !== 'number' || milliseconds < 0) {
-		throw new TypeError('Expected `milliseconds` to be a positive number');
-	}
+    options = {
+      customTimers: {setTimeout: global.setTimeout, clearTimeout: global.clearTimeout},
+      ...options
+    };
 
-	if (milliseconds === Infinity) {
-		resolve(promise);
-		return;
-	}
+    const timer = options.customTimers.setTimeout(() => {
+      if (typeof fallback === 'function') {
+        try {
+          resolve(fallback());
+        } catch (error) {
+          reject(error);
+        }
 
-	const timer = setTimeout(() => {
-		if (typeof fallback === 'function') {
-			try {
-				resolve(fallback());
-			} catch (error) {
-				reject(error);
-			}
+        return;
+      }
 
-			return;
-		}
+      const message = typeof fallback === 'string' ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
+      const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
 
-		const message = typeof fallback === 'string' ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
-		const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
+      if (typeof promise.cancel === 'function') {
+        promise.cancel();
+      }
 
-		if (typeof promise.cancel === 'function') {
-			promise.cancel();
-		}
+      reject(timeoutError);
+    }, milliseconds);
 
-		reject(timeoutError);
-	}, milliseconds);
+    // TODO: Use native `finally` keyword when targeting Node.js 10
+    pFinally(
+      // eslint-disable-next-line promise/prefer-await-to-then
+      promise.then(resolve, reject),
+      () => {
+        options.customTimers.clearTimeout(timer);
+      }
+    );
+  });
 
-	// TODO: Use native `finally` keyword when targeting Node.js 10
-	pFinally(
-		// eslint-disable-next-line promise/prefer-await-to-then
-		promise.then(resolve, reject),
-		() => {
-			clearTimeout(timer);
-		}
-	);
-});
-
+  return pTimeout;
+})();
 // --------------------------------------------------------------
 
-const CLEANUP_TIMEOUT = Number.parseInt(process.env.CLEANUP_TIMEOUT, 10) || 10000;
+// Store local references to `setTimeout` and `clearTimeout` asap, so that we can use them within `p-timeout`,
+// avoiding to be affected unintentionally by `sinon.useFakeTimers()` called by the tests themselves.
+const { setTimeout, clearTimeout } = global;
+
+const CLEANUP_TIMEOUT = Number.parseInt(process.env.CLEANUP_TIMEOUT, 10) || 30000;
 
 const Support = require('../support');
 
@@ -94,7 +105,8 @@ afterEach(async function() {
     await pTimeout(
       Support.clearDatabase(this.sequelize),
       CLEANUP_TIMEOUT,
-      `Could not clear database after this test in less than ${CLEANUP_TIMEOUT}ms. This test broke the DB, and no tests can continue. Aborting.`
+      `Could not clear database after this test in less than ${CLEANUP_TIMEOUT}ms. This test crashed the DB, and testing cannot continue. Aborting.`,
+      { customTimers: { setTimeout, clearTimeout } }
     );
   } catch (error) {
     let message = error.message;

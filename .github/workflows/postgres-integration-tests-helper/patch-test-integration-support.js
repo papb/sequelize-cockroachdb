@@ -15,6 +15,7 @@
 'use strict';
 
 console.log('[INFO] Using custom patch for `test/integration/support.js`');
+console.log('[INFO] Reading `Sequelize.supportsCockroachDB` from `test/integration/support.js` yields: ' + require('../..').supportsCockroachDB);
 
 // Store local references to `setTimeout` and `clearTimeout` asap, so that we can use them within `p-timeout`,
 // avoiding to be affected unintentionally by `sinon.useFakeTimers()` called by the tests themselves.

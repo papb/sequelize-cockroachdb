@@ -17,10 +17,10 @@
   "engines": {
     "node": ">=10"
   },
-  "main": "index.js",
+  "main": "source/index.js",
   "types": "types",
   "files": [
-    "index.js"
+    "source"
   ],
   "scripts": {
     "test-upsert": "node tests/see-upsert-working.js",

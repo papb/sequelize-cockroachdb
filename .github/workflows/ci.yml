@@ -61,13 +61,8 @@ jobs:
     name: (${{ matrix.sequelize-branch }}) ${{ matrix.test-path }}
     strategy:
       matrix:
-        sequelize-branch: [v5, v6]
-        test-path: [associations/alias, associations/belongs-to-many, associations/belongs-to, associations/has-many, associations/has-one, associations/multiple-level-filters, associations/scope, associations/self, cls, configuration, data-types, dialects/abstract/connection-manager, dialects/postgres/associations, dialects/postgres/connection-manager, dialects/postgres/dao, dialects/postgres/data-types, dialects/postgres/error, dialects/postgres/hstore, dialects/postgres/query-interface, dialects/postgres/query, dialects/postgres/range, dialects/postgres/regressions, error, hooks/associations, hooks/bulkOperation, hooks/count, hooks/create, hooks/destroy, hooks/find, hooks/hooks, hooks/restore, hooks/updateAttributes, hooks/upsert, hooks/validate, include/findAll, include/findAndCountAll, include/findOne, include/limit, include/paranoid, include/schema, include/separate, include, instance/decrement, instance/destroy, instance/increment, instance/reload, instance/save, instance/to-json, instance/update, instance/values, instance, instance.validations, json, model/attributes/field, model/attributes/types, model/attributes, model/bulk-create/include, model/bulk-create, model/count, model/create/include, model/create, model/findAll/group, model/findAll/groupedLimit, model/findAll/order, model/findAll/separate, model/findAll, model/findOne, model/findOrBuild, model/geography, model/geometry, model/increment, model/json, model/optimistic_locking, model/paranoid, model/schema, model/scope/aggregate, model/scope/associations, model/scope/count, model/scope/destroy, model/scope/find, model/scope/findAndCountAll, model/scope/merge, model/scope/update, model/scope, model/searchPath, model/sum, model/sync, model/update, model/upsert, model, operators, pool, query-interface/changeColumn, query-interface/createTable, query-interface/describeTable, query-interface/dropEnum, query-interface/removeColumn, query-interface, replication, schema, sequelize/deferrable, sequelize/log, sequelize, sequelize.transaction, timezone, transaction, trigger, utils, vectors]
-        include:
-          -
-            # Luckily the test files are the same in v5 and v6, except for one extra file in v6:
-            sequelize-branch: v6
-            test-path: sequelize/query
+        sequelize-branch: [v6]
+        test-path: [associations/alias, associations/belongs-to-many]
       fail-fast: false
     runs-on: ubuntu-latest
     env:
@@ -110,8 +105,12 @@ jobs:
       - name: Provide the `sequelize-cockroachdb` patches
         # This script needs `fs-jetpack` as an extra dependency
         run: |
+          set -Eeuxo pipefail
+          pwd
           npm install --no-save fs-jetpack
           node .github/workflows/helpers/put-our-patches-in-downloaded-sequelize.js
+          ls -lah .downloaded-sequelize/.cockroachdb-patches
+          ls -lah .downloaded-sequelize/.cockroachdb-patches/source || echo oops
           cat .downloaded-sequelize/.cockroachdb-patches/index.js
 
       - name: Copy over the dependencies needed by `sequelize-cockroachdb`

@@ -36,7 +36,6 @@ for (const intTypeName of ['integer', 'bigint']) {
 
     it('accepts JavaScript strings that represent 64-bit integers', async function () {
       const foo = await this.Foo.create({ i: "9223372036854775807" });
-      console.log('logging foo.y', typeof foo.i, foo.i);
       expect(foo.i).to.equal(9223372036854775807n);
     });
 

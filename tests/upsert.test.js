@@ -22,19 +22,6 @@ describe('upsert', function () {
     expect(Sequelize.supportsCockroachDB).to.be.true;
   });
 
-  it('supports simple usage', async function () {
-    const User = this.sequelize.define('user', { name: DataTypes.STRING });
-    await User.sync({ force: true });
-
-    const { id } = await User.create({ name: 'Someone' });
-
-    const [userReturnedFromUpsert] = await User.upsert({ id, name: 'Another Name' }, { returning: true });
-    const user = await User.findOne();
-
-    expect(user.name).to.equal('Another Name');
-    expect(userReturnedFromUpsert.name).to.equal('Another Name');
-  });
-
   it('updates at most one row', async function () {
     const User = this.sequelize.define('user', {
       id: {
@@ -111,27 +98,26 @@ describe('upsert', function () {
 
     const counter = await Counter.findOne({where: {id: id, id2: id2}});
 
-    // INTEGER columns are currently returned as strings.
-    expect(counter.count).to.equal("2");
+    expect(counter.count).to.equal(2);
     expect(counter.updatedAt).afterTime(counter.createdAt);
   });
 
-  it('throws error with RETURNING', async function () {
-    const User = this.sequelize.define('user', {
-      id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true
-      },
-      name: {
-        type: DataTypes.STRING,
-      },
-    });
+  it('works with RETURNING', async function () {
+    const User = this.sequelize.define('user', { name: DataTypes.STRING });
+    await User.sync({ force: true });
 
-    await User.sync({force: true});
-    await User.create({ id: 1, name: "original" });
+    const { id } = await User.create({ name: 'Someone' });
 
-    await expect(
-      User.upsert({ id: 1, name: "UPDATED" }, {returning: "*"})
-    ).to.be.eventually.rejectedWith("https://github.com/cockroachdb/cockroach/issues/6637");
+    const [userReturnedFromUpsert1] = await User.upsert({ id, name: 'Another Name' }, { returning: true });
+    const user1 = await User.findOne();
+
+    expect(user1.name).to.equal('Another Name');
+    expect(userReturnedFromUpsert1.name).to.equal('Another Name');
+
+    const [userReturnedFromUpsert2] = await User.upsert({ id, name: 'Another Name 2' }, { returning: '*' });
+    const user2 = await User.findOne();
+
+    expect(user2.name).to.equal('Another Name 2');
+    expect(userReturnedFromUpsert2.name).to.equal('Another Name 2');
   });
 });

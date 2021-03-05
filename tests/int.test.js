@@ -17,8 +17,8 @@ require('./helper');
 const { expect } = require('chai');
 const { Sequelize, DataTypes } = require('../source');
 
-for (const intTypeName of ['INTEGER', 'BIGINT']) {
-  const intType = DataTypes[intTypeName];
+for (const intTypeName of ['integer', 'bigint']) {
+  const intType = DataTypes[intTypeName.toUpperCase()];
 
   describe('DataTypes.' + intType.key, function () {
     before(async function () {
@@ -31,19 +31,20 @@ for (const intTypeName of ['INTEGER', 'BIGINT']) {
 
     it('accepts JavaScript integers', async function () {
       const foo = await this.Foo.create({ i: 42 });
-      expect(foo.i).to.equal("42");
+      expect(foo.i).to.equal(42);
     });
 
     it('accepts JavaScript strings that represent 64-bit integers', async function () {
       const bigValue = "9223372036854775807";
-      const foo = await this.Foo.create({ i: bigValue })
+      const foo = await this.Foo.create({ i: bigValue });
+      console.log('logging foo', foo);
       expect(foo.i).to.equal(bigValue);
     });
 
     it('rejects integers that overflow', async function () {
       await expect(
         this.Foo.create({ i: "9223372036854775808" })
-      ).to.be.eventually.rejectedWith('numeric constant out of int64 range');
+      ).to.be.eventually.rejectedWith('value out of range');
     });
 
     it('rejects garbage', async function () {

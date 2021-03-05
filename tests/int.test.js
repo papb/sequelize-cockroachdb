@@ -35,10 +35,9 @@ for (const intTypeName of ['integer', 'bigint']) {
     });
 
     it('accepts JavaScript strings that represent 64-bit integers', async function () {
-      const bigValue = "9223372036854775807";
-      const foo = await this.Foo.create({ i: bigValue });
-      console.log('logging foo', foo);
-      expect(foo.i).to.equal(bigValue);
+      const foo = await this.Foo.create({ i: "9223372036854775807" });
+      console.log('logging foo.y', typeof foo.i, foo.i);
+      expect(foo.i).to.equal(9223372036854775807n);
     });
 
     it('rejects integers that overflow', async function () {

@@ -1,4 +1,4 @@
-// Copyright 2020 The Cockroach Authors.
+// Copyright 2021 The Cockroach Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+const chai = require('chai');
+const Sequelize = require('../source');
+
+chai.use(require('chai-as-promised'));
+chai.use(require('chai-datetime'));
+chai.use(require('sinon-chai'));
+
 // These tests run against a local instance of CockroachDB that meets the
 // following requirements:
 //
@@ -20,12 +27,6 @@
 
 // To override the CockroachDB port, set the COCKROACH_PORT environment
 // variable.
-
-var chai = require('chai');
-var Sequelize = require('..');
-
-chai.use(require('chai-as-promised'));
-chai.use(require('chai-datetime'));
 
 before(function() {
   this.sequelize = new Sequelize('sequelize_test', 'root', '', {
@@ -38,4 +39,4 @@ before(function() {
 
 after(function() {
   this.sequelize.close();
-})
+});

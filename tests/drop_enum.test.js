@@ -1,11 +1,23 @@
+// Copyright 2021 The Cockroach Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
+
 require('./helper');
 
-var expect = require('chai').expect;
-var Sequelize = require('..');
-var DataTypes = Sequelize.DataTypes;
+const { expect } = require('chai');
+const { Sequelize, DataTypes } = require('../source');
 
-// Reason: after merging with other patches started failing locally only
-describe.skip('QueryInterface', () => {
+describe('QueryInterface', () => {
   beforeEach(function() {
     this.sequelize.options.quoteIdenifiers = true;
     this.queryInterface = this.sequelize.getQueryInterface();
@@ -17,19 +29,10 @@ describe.skip('QueryInterface', () => {
 
   describe('dropEnum', () => {
     beforeEach(async function() {
-     await this.queryInterface.createTable('menus',  {
-        structuretype: {
-          type: DataTypes.ENUM('menus', 'submenu', 'routine'),
-          allowNull: true
-        },
-        sequence: {
-          type: DataTypes.INTEGER,
-          allowNull: true
-        },
-        name: {
-          type: DataTypes.STRING,
-          allowNull: true
-        }
+      await this.queryInterface.createTable('menus', {
+        structuretype: DataTypes.ENUM('menus', 'submenu', 'routine'),
+        sequence: DataTypes.INTEGER,
+        name: DataTypes.STRING
       });
     });
 
